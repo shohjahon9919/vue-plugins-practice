@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue Plugins</title>
+  <!-- Подключаем Vue 3 через CDN -->
+  <script src="https://unpkg.com/vue@3"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Выводим переводы -->
+    <h1>{{ $translate('greetings.hello') }}</h1>
+    <h2>{{ $translate('greetings.goodbye') }}</h2>
+
+    <!-- Кнопки для смены языка -->
+    <button @click="setLanguage(english)">English</button>
+    <button @click="setLanguage(french)">Français</button>
+
+    <!-- Кнопка для теста логгера -->
+    <button @click="$log('Тест логгера!')">Логировать</button>
+
+    <!-- Компонент, использующий inject -->
+    <i18n-info></i18n-info>
+  </div>
+
+  <!-- Подключаем плагины и настройки -->
+  <script type="module">
+    import i18nPlugin from './i18n.js';
+    import loggerPlugin from './logger.js';
+
+    // Объекты с переводами
+    const english = {
+      greetings: {
+        hello: 'Hello!',
+        goodbye: 'Goodbye!'
+      }
+    };
+
+    const french = {
+      greetings: {
+        hello: 'Bonjour!',
+        goodbye: 'Au revoir!'
+      }
+    };
+
+    // Создаём Vue-приложение
+    const app = Vue.createApp({
+      methods: {
+        // Метод для смены языка
+        setLanguage(langData) {
+          this.$i18n = langData; // Обновляем данные
+          this.$translate = (key) => {
+            return key.split('.').reduce((o, i) => o?.[i], langData) ?? '*Нет перевода*';
+          };
+        }
+      },
+      mounted() {
+        this.setLanguage(english); // Устанавливаем язык по умолчанию
+      }
+    });
+
+    // Регистрируем плагины
+    app.use(i18nPlugin, english); // Передаём начальные переводы
+    app.use(loggerPlugin);
+
+    // Компонент, использующий inject('i18n')
+    app.component('i18n-info', {
+      template: `
+        <div style="margin-top: 20px; border: 1px solid #ccc; padding: 10px;">
+          <p>Текущий перевод: {{ helloText }}</p>
+          <p>Данные i18n: {{ i18nData }}</p>
+        </div>
+      `,
+      setup() {
+        const i18n = Vue.inject('i18n'); // Получаем данные через inject
+        const helloText = Vue.computed(() => i18n.greetings.hello);
+        return { helloText, i18nData: i18n };
+      }
+    });
+
+    // Запускаем приложение
+    app.mount('#app');
+  </script>
+</body>
+</html>
